@@ -1,0 +1,18 @@
+Bootstrap: docker
+From: mambaorg/micromamba:1.4.3
+
+%files
+kneaddata/environment.yaml /mambaenv/environment.yaml
+
+%post
+
+micromamba install --quiet -y -n base -f /mambaenv/environment.yaml
+micromamba clean --all --yes
+
+%environment
+export PATH=/opt/conda/bin:$PATH
+
+%runscript
+exec /bin/bash "$@"
+%startscript
+exec /bin/bash "$@"
