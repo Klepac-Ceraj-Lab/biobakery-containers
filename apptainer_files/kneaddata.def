@@ -2,12 +2,16 @@ Bootstrap: docker
 From: mambaorg/micromamba:1.4.3
 
 %files
-kneaddata/environment.yaml /mambaenv/environment.yaml
+environment.yaml /mambaenv/environment.yaml
 
 %post
 
 micromamba install --quiet -y -n base -f /mambaenv/environment.yaml
 micromamba clean --all --yes
+
+ln -f /opt/conda/share/trimmomatic/trimmomatic.jar /opt/conda/bin/trimmomatic
+
+/opt/conda/bin/kneaddata_database --download human_genome bowtie2 /hg37/
 
 %environment
 export PATH=/opt/conda/bin:$PATH

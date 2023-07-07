@@ -2,12 +2,16 @@ Bootstrap: docker
 From: mambaorg/micromamba:1.4.3
 
 %files
-humann/environment.yaml /mambaenv/environment.yaml
+environment.yaml /mambaenv/environment.yaml
 
 %post
 
 micromamba install --quiet -y -n base -f /mambaenv/environment.yaml
 micromamba clean --all --yes
+
+/opt/conda/bin/humann_databases --download utility_mapping full /databases/
+/opt/conda/bin/humann_databases --download chocophlan full /databases/
+/opt/conda/bin/humann_databases --download uniref uniref90_diamond /databases/
 
 %environment
 export PATH=/opt/conda/bin:$PATH
