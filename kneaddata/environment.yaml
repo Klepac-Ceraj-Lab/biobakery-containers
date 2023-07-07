@@ -6,4 +6,4 @@ channels:
 dependencies:
   - python=3.8
   - procps-ng
-  - kneaddata=0.12
+  - kneaddata=0.10
