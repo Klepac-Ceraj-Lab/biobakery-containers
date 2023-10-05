@@ -12,7 +12,7 @@ micromamba clean --all --yes
 mkdir -p /databases/bowtie2db
 mkdir -p /databases/bowtie2_build
 
-/opt/conda/bin/metaphlan --install --bowtie2db /databases/bowtie2db --bowtie2_build /databases/bowtie2_build
+/opt/conda/bin/metaphlan --install --bowtie2db /databases/bowtie2db --bowtie2_build /databases/bowtie2_build -x mpa_v31_CHOCOPhlAn_201901
 
 %environment
 export PATH=/opt/conda/bin:$PATH
