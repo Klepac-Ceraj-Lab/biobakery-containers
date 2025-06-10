@@ -43,7 +43,6 @@ Eg, you can build the container locally, and then put it on other systems.
 1. navigate to the root of this repository
 2. build
 
-
 ```sh
 $ sudo singularity build $CONTAINER_PATH/kneaddata.sif $REPO_PATH/apptainer_files/kneaddata.def
 ```
