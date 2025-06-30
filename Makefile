@@ -1,30 +1,64 @@
-REGISTRY ?= ghcr.io/klepac-ceraj-lab
-VERSION ?= latest
-CONTAINER_HOME ?= $(HOME)/containers
-DATABASE_HOME ?= $(HOME)/containers
+### REPOSITORY SETTINGS BLOCK
+# GHCR settings
+GHCR_HANDLE ?= klepac-ceraj-lab## your GitHub org
+GHCR_USER ?= ## your GitHub org or username
+GHCR_PAT ?= ## must be set in your environment (e.g. via .env)
+# ECR settings
+AWS_REGION ?= us-east-1## AWS region for the account
+AWS_PROFILE ?= default## AWS profile to use for login
+ECR_REPO ?=	## must be set in your environment (e.g. via .env)
+# GENERAL REPO SETTINGS
+REPO_TYPE := ghcr## valid values: ghcr or ecr
+REGISTRY_ghcr := ghcr.io/$(GHCR_HANDLE)
+REGISTRY_ecr := $(ECR_REPO)
+REGISTRY := $(REGISTRY_$(REPO_TYPE))
+### IMAGE SETTINGS BLOCK
+VERSION ?= latest## Version tag on the Image
+### HOME STORAGE SETTINGS BLOCK
+CONTAINER_HOME ?=$(HOME)/containers
+DATABASE_HOME ?=$(HOME)/containers
+### MAKEFILE SETTINGS BLOCK
 IMAGES := bzip2 kneaddata/012 metaphlan/3 metaphlan/4 humann/3 humann/4
+IMAGE_ALIASES := $(subst /,-,$(IMAGES))
 
-.PHONY: all build push apptainer install postinstall clean \
-        $(IMAGES) \
-        $(IMAGES:%=push-%) \
-        $(IMAGES:%=apptainer-%)
+.PHONY: all login build push apptainer clean $(IMAGE_ALIASES)
 
 all: build
 
-build: $(IMAGES)
+login:
+	$(info    ECR_REPO is $(ECR_REPO))
+	$(info    REGISTRY_ghcr is $(REGISTRY_ghcr))
+	$(info    REGISTRY_ecr is $(REGISTRY_ecr))
+	$(info    REGISTRY is $(REGISTRY))
+ifeq ($(REPO_TYPE),ghcr)
+	@[ -n "$(GHCR_PAT)" ] || (echo "GHCR_PAT ENV variable not found! Please set GHCR_PAT"; exit 1)
+	@echo "$(GHCR_PAT)" | docker login ghcr.io -u $(GHCR_USER) --password-stdin
+else ifeq ($(REPO_TYPE),ecr)
+	@[ -n "$(ECR_REPO)" ] || (echo "ECR_REPO ENV variable not found! Please set ECR_REPO"; exit 1)
+	@echo "Logging in to ECR with profile $(AWS_PROFILE) in $(AWS_REGION)"
+	@aws ecr get-login-password --region $(AWS_REGION) --profile $(AWS_PROFILE) \
+	| docker login --username AWS --password-stdin $(REGISTRY)
+endif
 
-$(IMAGES):
-	docker build -t $(REGISTRY)/$(subst /,-,$@):$(VERSION) -f $@/Dockerfile $@
+build: $(IMAGE_ALIASES)
 
-push: $(IMAGES:%=push-%)
+$(IMAGE_ALIASES):
+	docker build -t $(REGISTRY)/$@:$(VERSION) \
+	             -f $(subst -,/,$@)/Dockerfile \
+	             $(subst -,/,$@)
 
-push-%:
-	docker push $(REGISTRY)/$(subst /,-,$*):$(VERSION)
+push: login
+	@for img in $(IMAGE_ALIASES); do \
+	  echo "Pushing $(REGISTRY)/$$img:$(VERSION)"; \
+	  docker push $(REGISTRY)/$$img:$(VERSION); \
+	done
 
-apptainer: $(IMAGES:%=apptainer-%)
+apptainer: $(IMAGE_ALIASES:%=apptainer-%)
 
 apptainer-%:
-	apptainer build $(subst /,-,$*).sif docker://$(REGISTRY)/$(subst /,-,$*):$(VERSION)
+	mkdir -p $(CONTAINER_HOME)
+	apptainer build $(CONTAINER_HOME)/$*.sif \
+	                docker://$(REGISTRY)/$*:$(VERSION)
 
 install: apptainer postinstall
 
