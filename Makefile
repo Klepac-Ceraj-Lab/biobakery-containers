@@ -85,4 +85,4 @@ postinstall:
 	fi
 
 clean:
-	rm -f *.sif
+	rm -f $(CONTAINER_HOME)/*.sif
