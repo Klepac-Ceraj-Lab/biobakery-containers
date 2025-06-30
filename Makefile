@@ -56,12 +56,17 @@ push: login
 apptainer: $(IMAGE_ALIASES:%=apptainer-%)
 
 apptainer-%:
+	$(info    ECR_REPO is $(ECR_REPO))
+	$(info    REGISTRY_ghcr is $(REGISTRY_ghcr))
+	$(info    REGISTRY_ecr is $(REGISTRY_ecr))
+	$(info    REGISTRY is $(REGISTRY))
 	mkdir -p $(CONTAINER_HOME)
+	echo "$(GHCR_PAT)" | apptainer registry login --username "$(GHCR_USER)" --password-stdin docker://ghcr.io
 	apptainer build $(CONTAINER_HOME)/$*.sif \
 	                docker://$(REGISTRY)/$*:$(VERSION)
 
 install: apptainer postinstall
-
+# --password $(GHCR_PAT)
 postinstall:
 	@SHELL_NAME=$$(basename "$$SHELL"); \
 	case "$$SHELL_NAME" in \
